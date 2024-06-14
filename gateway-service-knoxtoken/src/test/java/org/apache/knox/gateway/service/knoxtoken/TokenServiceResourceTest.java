@@ -55,13 +55,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
@@ -1041,7 +1041,7 @@ public class TokenServiceResourceTest {
 
   @Test
   public void testUnlimitedTokensPerUser() throws Exception {
-    testLimitingTokensPerUser(-1, 100);
+    testLimitingTokensPerUser(-1, 1000);
   }
 
   @Test
@@ -1135,12 +1135,15 @@ public class TokenServiceResourceTest {
     }
 
     for (int i = 0; i < numberOfTokens; i++) {
-      acquireToken(tr);
+      final Response tokenResponse = acquireToken(tr);
+      final String tokenId = getTagValue(tokenResponse.getEntity().toString(), "token_id");
+      assertNotNull(tokenId);
     }
     final Response getKnoxTokensResponse = getUserTokensResponse(tr);
     final Collection<String> tokens = ((Map<String, Collection<String>>) JsonUtils.getObjectFromJsonString(getKnoxTokensResponse.getEntity().toString()))
         .get("tokens");
-    assertEquals(tokens.size(), revokeOldestToken ? configuredLimit + numberOfKnoxSsoCookies : numberOfTokens + numberOfKnoxSsoCookies);
+    int nrOfExpectedUserTokens = revokeOldestToken ? configuredLimit + numberOfKnoxSsoCookies : numberOfTokens + numberOfKnoxSsoCookies;
+    assertEquals(nrOfExpectedUserTokens, tokens.size());
   }
 
   private Response acquireToken(TokenResource tokenResource) throws Exception {
@@ -1812,7 +1815,6 @@ public class TokenServiceResourceTest {
     }
 
     private Collection<KnoxToken> fetchTokens(String userName, boolean createdBy) {
-      final Collection<KnoxToken> tokens = new TreeSet<>();
       final Predicate<Map.Entry<String, TokenMetadata>> filterPredicate;
       if (userName == null) {
         filterPredicate = entry -> true;
@@ -1823,15 +1825,25 @@ public class TokenServiceResourceTest {
           filterPredicate = entry -> userName.equals(entry.getValue().getUserName());
         }
       }
-      tokenMetadata.entrySet().stream().filter(filterPredicate).forEach(metadata -> {
-        String tokenId = metadata.getKey();
-        try {
-          tokens.add(new KnoxToken(tokenId, getTokenIssueTime(tokenId), getTokenExpiration(tokenId), getMaxLifetime(tokenId), metadata.getValue()));
-        } catch (UnknownTokenException e) {
-          // NOP
-        }
-      });
-      return tokens;
+      return tokenMetadata
+              .entrySet()
+              .stream()
+              .filter(filterPredicate)
+              .map(this::createKnoxTokenFromMetadata)
+              .collect(Collectors.toList());
+    }
+
+    private KnoxToken createKnoxTokenFromMetadata(Map. Entry<String, TokenMetadata> tokenMetadataEntry) {
+      try {
+        String tokenId = tokenMetadataEntry.getKey();
+        return new KnoxToken(tokenId,
+                getTokenIssueTime(tokenId),
+                getTokenExpiration(tokenId),
+                getMaxLifetime(tokenId),
+                tokenMetadataEntry.getValue());
+      } catch (UnknownTokenException e) {
+        return null;
+      }
     }
 
     @Override

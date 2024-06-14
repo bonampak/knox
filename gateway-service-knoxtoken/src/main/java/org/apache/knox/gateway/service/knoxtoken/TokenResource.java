@@ -32,13 +32,11 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -476,10 +474,10 @@ public class TokenResource {
       } else if (userNameOrCreatedBy == null) {
         userTokens = createdBy == null ? tokenStateService.getTokens(userName) : tokenStateService.getDoAsTokens(createdBy);
       } else {
-        userTokens = new HashSet<>(tokenStateService.getTokens(userNameOrCreatedBy));
+        userTokens = new LinkedList<>(tokenStateService.getTokens(userNameOrCreatedBy));
         userTokens.addAll(tokenStateService.getDoAsTokens(userNameOrCreatedBy));
       }
-      final Collection<KnoxToken> tokens = new TreeSet<>();
+      final Collection<KnoxToken> tokens = new LinkedList<>();
       if (metadataMap.isEmpty()) {
         tokens.addAll(userTokens);
       } else {
@@ -666,7 +664,7 @@ public class TokenResource {
 
   private boolean isKnoxSsoCookie(String tokenId) throws UnknownTokenException {
     final TokenMetadata metadata = tokenStateService.getTokenMetadata(tokenId);
-    return metadata == null ? false : metadata.isKnoxSsoCookie();
+    return metadata != null && metadata.isKnoxSsoCookie();
   }
 
   private boolean triesToRevokeOwnToken(String tokenId, String revoker) throws UnknownTokenException {
@@ -906,19 +904,17 @@ public class TokenResource {
     if (tokenStateService != null) {
       if (tokenLimitPerUser != -1) { // if -1 => unlimited tokens for all users
         final Collection<KnoxToken> allUserTokens = tokenStateService.getTokens(userName);
-        final Collection<KnoxToken> userTokens = new LinkedList<>();
-        allUserTokens.stream().forEach(token -> {
-          if(!token.getMetadata().isKnoxSsoCookie()) {
-            userTokens.add(token);
-          }
-        });
+        final LinkedList<KnoxToken> userTokens = allUserTokens
+                .stream()
+                .filter(t -> !t.getMetadata().isKnoxSsoCookie())
+                .collect(Collectors.toCollection(LinkedList::new));
         if (userTokens.size() >= tokenLimitPerUser) {
           log.tokenLimitExceeded(userName);
           if (UserLimitExceededAction.RETURN_ERROR == userLimitExceededAction) {
             response = Response.status(Response.Status.FORBIDDEN).entity("{ \"Unable to get token - token limit exceeded.\" }").build();
           } else {
             // userTokens is an ordered collection (by issue time) -> the first element is the oldest one
-            final String oldestTokenId = userTokens.iterator().next().getTokenId();
+            final String oldestTokenId = userTokens.getFirst().getTokenId();
             log.generalInfoMessage(String.format(Locale.getDefault(), "Revoking %s's oldest token %s ...", userName, Tokens.getTokenIDDisplayText(oldestTokenId)));
             final Response revocationResponse = revoke(oldestTokenId);
             if (Response.Status.OK.getStatusCode() != revocationResponse.getStatus()) {

@@ -25,10 +25,10 @@ import java.text.ParseException;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -502,7 +502,7 @@ public class TokenIDAsHTTPBasicCredsFederationFilterTest extends JWTAsHTTPBasicC
         }
 
         private Collection<KnoxToken> fetchTokens(String userName, boolean createdBy) {
-          final Collection<KnoxToken> tokens = new TreeSet<>();
+          final Collection<KnoxToken> tokens = new LinkedList<>();
           final Predicate<Map.Entry<String, TokenMetadata>> filterPredicate;
           if (userName == null) {
             filterPredicate = entry -> true;

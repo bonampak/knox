@@ -21,10 +21,10 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -438,7 +438,7 @@ public class DefaultTokenStateService implements TokenStateService {
   }
 
   private Collection<KnoxToken> fetchTokens(String userName, boolean createdBy) {
-    final Collection<KnoxToken> tokens = new TreeSet<>();
+    final Collection<KnoxToken> tokens = new LinkedList<>();
     final Predicate<Map.Entry<String, TokenMetadata>> filterPredicate;
     if (userName == null) {
       filterPredicate = entry -> true;
