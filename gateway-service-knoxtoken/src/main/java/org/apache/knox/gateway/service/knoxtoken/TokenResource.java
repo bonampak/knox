@@ -56,6 +56,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import com.google.common.collect.SortedMultiset;
+import com.google.common.collect.TreeMultiset;
 import com.google.gson.Gson;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.KeyLengthException;
@@ -904,17 +906,17 @@ public class TokenResource {
     if (tokenStateService != null) {
       if (tokenLimitPerUser != -1) { // if -1 => unlimited tokens for all users
         final Collection<KnoxToken> allUserTokens = tokenStateService.getTokens(userName);
-        final LinkedList<KnoxToken> userTokens = allUserTokens
+        final SortedMultiset<KnoxToken> userTokens = allUserTokens
                 .stream()
                 .filter(t -> !t.getMetadata().isKnoxSsoCookie())
-                .collect(Collectors.toCollection(LinkedList::new));
+                .collect(Collectors.toCollection(TreeMultiset::create));
         if (userTokens.size() >= tokenLimitPerUser) {
           log.tokenLimitExceeded(userName);
           if (UserLimitExceededAction.RETURN_ERROR == userLimitExceededAction) {
             response = Response.status(Response.Status.FORBIDDEN).entity("{ \"Unable to get token - token limit exceeded.\" }").build();
           } else {
             // userTokens is an ordered collection (by issue time) -> the first element is the oldest one
-            final String oldestTokenId = userTokens.getFirst().getTokenId();
+            final String oldestTokenId = userTokens.firstEntry().getElement().getTokenId();
             log.generalInfoMessage(String.format(Locale.getDefault(), "Revoking %s's oldest token %s ...", userName, Tokens.getTokenIDDisplayText(oldestTokenId)));
             final Response revocationResponse = revoke(oldestTokenId);
             if (Response.Status.OK.getStatusCode() != revocationResponse.getStatus()) {
