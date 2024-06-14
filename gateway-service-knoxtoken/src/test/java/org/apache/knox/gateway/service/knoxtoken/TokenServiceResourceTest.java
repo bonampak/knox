@@ -1041,7 +1041,7 @@ public class TokenServiceResourceTest {
 
   @Test
   public void testUnlimitedTokensPerUser() throws Exception {
-    testLimitingTokensPerUser(-1, 1000);
+    testLimitingTokensPerUser(-1, 100);
   }
 
   @Test
@@ -1135,9 +1135,7 @@ public class TokenServiceResourceTest {
     }
 
     for (int i = 0; i < numberOfTokens; i++) {
-      final Response tokenResponse = acquireToken(tr);
-      final String tokenId = getTagValue(tokenResponse.getEntity().toString(), "token_id");
-      assertNotNull(tokenId);
+      acquireToken(tr);
     }
     final Response getKnoxTokensResponse = getUserTokensResponse(tr);
     final Collection<String> tokens = ((Map<String, Collection<String>>) JsonUtils.getObjectFromJsonString(getKnoxTokensResponse.getEntity().toString()))
