@@ -1078,7 +1078,7 @@ public class TokenServiceResourceTest {
 
   private Response getUserTokensResponse(TokenResource tokenResource, boolean createdBy) {
     final MultivaluedMap<String, String> queryParameters = new MultivaluedHashMap<>();
-    queryParameters.put(createdBy ? "createdBy" : "userName", Arrays.asList(USER_NAME));
+    queryParameters.put(createdBy ? "createdBy" : "userName", Collections.singletonList(USER_NAME));
     final UriInfo uriInfo = EasyMock.createNiceMock(UriInfo.class);
     EasyMock.expect(uriInfo.getQueryParameters()).andReturn(queryParameters).anyTimes();
     EasyMock.replay(uriInfo);
@@ -1086,7 +1086,7 @@ public class TokenServiceResourceTest {
   }
 
   @Test
-  public void testTokenLimitPerUserExceeded() throws Exception {
+  public void testTokenLimitPerUserExceeded() {
     try {
       testLimitingTokensPerUser(10, 11);
       fail("Exception should have been thrown");
@@ -1783,7 +1783,7 @@ public class TokenServiceResourceTest {
     }
 
     @Override
-    public long getTokenExpiration(String tokenId, boolean validate) throws UnknownTokenException {
+    public long getTokenExpiration(String tokenId, boolean validate) {
       return 0;
     }
 
@@ -1793,7 +1793,7 @@ public class TokenServiceResourceTest {
     }
 
     @Override
-    public TokenMetadata getTokenMetadata(String tokenId) throws UnknownTokenException {
+    public TokenMetadata getTokenMetadata(String tokenId) {
       return tokenMetadata.get(tokenId);
     }
 
@@ -1845,15 +1845,15 @@ public class TokenServiceResourceTest {
     }
 
     @Override
-    public void init(GatewayConfig config, Map<String, String> options) throws ServiceLifecycleException {
+    public void init(GatewayConfig config, Map<String, String> options) {
     }
 
     @Override
-    public void start() throws ServiceLifecycleException {
+    public void start() {
     }
 
     @Override
-    public void stop() throws ServiceLifecycleException {
+    public void stop() {
     }
   }
 
@@ -1862,8 +1862,8 @@ public class TokenServiceResourceTest {
 
   private static class TestJWTokenAuthority implements JWTokenAuthority {
 
-    private RSAPublicKey publicKey;
-    private RSAPrivateKey privateKey;
+    private final RSAPublicKey publicKey;
+    private final RSAPrivateKey privateKey;
 
     TestJWTokenAuthority(RSAPublicKey publicKey, RSAPrivateKey privateKey) {
       this.publicKey = publicKey;
