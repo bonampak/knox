@@ -27,14 +27,11 @@ import org.apache.knox.gateway.i18n.messages.StackTrace;
 @Messages(logger="org.apache.knox.gateway.topology.discovery.cm")
 public interface ClouderaManagerServiceDiscoveryMessages {
 
-  @Message(level = MessageLevel.INFO, text = "Discovering cluster: {0} ({1})")
-  void discoveringCluster(String clusterName, String version);
-
-  @Message(level = MessageLevel.INFO, text = "Discovered cluster: {0} ({1})")
-  void discoveredCluster(String clusterName, String version);
-
   @Message(level = MessageLevel.INFO, text = "Performing cluster discovery for \"{0}\"")
   void discoveringCluster(String clusterName);
+
+  @Message(level = MessageLevel.INFO, text = "Discovered cluster \"{0}\"")
+  void discoveredCluster(String clusterName);
 
   @Message(level = MessageLevel.INFO, text = "Discovering service: {0} ({1}) ...")
   void discoveringService(String serviceName, String serviceType);
@@ -100,6 +97,10 @@ public interface ClouderaManagerServiceDiscoveryMessages {
   @Message(level = MessageLevel.DEBUG,
           text = "Fetching service role configurations for service {0} for cluster ({1}) at offset {2} and limit {3}")
   void fetchingServiceRoleConfigs(String serviceName, String clusterName, long offset, long limit);
+
+  @Message(level = MessageLevel.WARN,
+          text = "Received null service role list for service {0} for cluster ({1})")
+  void receivedNullServiceRoleList(String serviceName, String clusterName);
 
   @Message(level = MessageLevel.WARN,
           text = "Received null service role configurations for service {0} for cluster ({1})")
@@ -304,4 +305,14 @@ public interface ClouderaManagerServiceDiscoveryMessages {
 
   @Message(level = MessageLevel.DEBUG, text = "Service discovery client connect timeout {0} ms, read timeout {1} ms, write timeout {2} ms")
   void discoveryClientTimeout(long connectTimeout, long readTimeout, long writeTimeout);
+
+  @Message(level = MessageLevel.INFO, text = "Role fetch strategy was set to {0}. Will fetch role configuration by each role and client base path is {1}")
+  void usingSimpleRoleStrategy(String roleFetchConfigValue, String basePath);
+
+  @Message(level = MessageLevel.WARN, text = "Invalid role fetch strategy configured:{0}. Will fetch role configuration by each role and client base path is {1}")
+  void usingSimpleRoleStrategyFallback(String roleFetchConfigValue, String basePath);
+
+  @Message(level = MessageLevel.INFO, text = "Role fetch strategy was set to {0}. Will fetch role configuration by each service with page size {1} and client base path is {2}")
+  void usingRoleStrategyWithPageSize(String roleFetchConfigValue, long pageSize, String basePath);
+
 }
