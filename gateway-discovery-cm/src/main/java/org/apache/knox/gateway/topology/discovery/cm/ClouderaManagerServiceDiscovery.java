@@ -257,6 +257,7 @@ public class ClouderaManagerServiceDiscovery implements ServiceDiscovery, Cluste
     return false;
   }
 
+  @SuppressWarnings("PMD.UnusedFormalParameter")
   private ClouderaManagerCluster discoverCluster(GatewayConfig gatewayConfig, DiscoveryApiClient client,
                                                  String clusterName, Collection<String> includedServices)
           throws ApiException {
@@ -287,7 +288,7 @@ public class ClouderaManagerServiceDiscovery implements ServiceDiscovery, Cluste
       //  }
       log.discoveringService(service.getName(), service.getType());
       serviceModels.addAll(
-              discoverService(client, clusterName, includedServices, service, servicesResourceApi, roleCollector, coreSettingsConfig)
+              discoverService(client, clusterName, service, servicesResourceApi, roleCollector, coreSettingsConfig)
       );
       log.discoveredService(service.getName(), service.getType());
     }
@@ -297,7 +298,7 @@ public class ClouderaManagerServiceDiscovery implements ServiceDiscovery, Cluste
     return cluster;
   }
 
-  private Set<ServiceModel> discoverService(DiscoveryApiClient client, String clusterName, Collection<String> includedServices,
+  private Set<ServiceModel> discoverService(DiscoveryApiClient client, String clusterName,
                                             ApiService service, ServicesResourceApi servicesResourceApi,
                                             ServiceRoleCollector roleCollector, ApiServiceConfig coreSettingsConfig) throws ApiException {
     Set<ServiceModel> serviceModels = new HashSet<>();
@@ -376,6 +377,7 @@ public class ClouderaManagerServiceDiscovery implements ServiceDiscovery, Cluste
     return null;
   }
 
+  @SuppressWarnings("PMD.UnusedPrivateMethod")
   private boolean shouldSkipServiceDiscovery(List<ServiceModelGenerator> modelGenerators, Collection<String> includedServices) {
     if (includedServices == null || includedServices.isEmpty()) {
       // per the contract of org.apache.knox.gateway.topology.discovery.ServiceDiscovery.discover(GatewayConfig, ServiceDiscoveryConfig, String, Collection<String>):
