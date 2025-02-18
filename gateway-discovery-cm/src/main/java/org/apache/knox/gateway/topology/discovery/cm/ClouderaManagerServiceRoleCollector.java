@@ -19,11 +19,17 @@ package org.apache.knox.gateway.topology.discovery.cm;
 
 import com.cloudera.api.swagger.RolesResourceApi;
 import com.cloudera.api.swagger.client.ApiException;
+import com.cloudera.api.swagger.model.ApiConfigList;
+import com.cloudera.api.swagger.model.ApiRole;
+import com.cloudera.api.swagger.model.ApiRoleConfig;
 import com.cloudera.api.swagger.model.ApiRoleConfigList;
+import com.cloudera.api.swagger.model.ApiRoleList;
 import org.apache.knox.gateway.i18n.messages.MessagesFactory;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+
+import static org.apache.knox.gateway.config.GatewayConfig.CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_FETCH_STRATEGY_BY_ROLE;
 
 public class ClouderaManagerServiceRoleCollector implements ServiceRoleCollector {
 
@@ -33,16 +39,51 @@ public class ClouderaManagerServiceRoleCollector implements ServiceRoleCollector
     private final long limit;
     private static final ClouderaManagerServiceDiscoveryMessages log =
             MessagesFactory.get(ClouderaManagerServiceDiscoveryMessages.class);
+    private final String roleFetchStrategy;
 
     public ClouderaManagerServiceRoleCollector(RolesResourceApi rolesResourceApi, String clusterName,
-                                               long roleConfigPageSize) {
+                                               long roleConfigPageSize, String roleFetchStrategy) {
         this.rolesResourceApi = rolesResourceApi;
         this.clusterName = clusterName;
         this.limit = roleConfigPageSize;
+        this.roleFetchStrategy = roleFetchStrategy;
     }
 
     @Override
     public ApiRoleConfigList getAllServiceRoleConfiguration(String serviceName) throws ApiException {
+        if (CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_FETCH_STRATEGY_BY_ROLE.equals(roleFetchStrategy)) {
+            return getAllServiceRoleConfigurationByRole(serviceName);
+        } else {
+            return getAllServiceRoleConfigurationInBulk(serviceName);
+        }
+    }
+
+    public ApiRoleConfigList getAllServiceRoleConfigurationByRole(String serviceName) throws ApiException {
+        ApiRoleConfigList allServiceRoleConfigs = new ApiRoleConfigList();
+        allServiceRoleConfigs.setItems(new ArrayList<>());
+
+        ApiRoleList roles = rolesResourceApi.readRoles(clusterName, serviceName, "", VIEW_FULL);
+        if (roles.getItems() == null) {
+            return allServiceRoleConfigs;
+        }
+        for (ApiRole role : roles.getItems()) {
+            String roleName = role.getName();
+            log.fetchingServiceRoleConfigs(serviceName, clusterName, roleName);
+            ApiConfigList config = rolesResourceApi.readRoleConfig(clusterName, role.getName(), serviceName, VIEW_FULL);
+            if (config != null && config.getItems() != null) {
+                ApiRoleConfig roleConfig = new ApiRoleConfig().roleType(role.getType())
+                        .name(role.getName())
+                        .hostRef(role.getHostRef())
+                        .config(config);
+                allServiceRoleConfigs.getItems().add(roleConfig);
+            } else {
+                log.receivedNullServiceRoleConfigs(serviceName, clusterName, roleName);
+            }
+        }
+        return allServiceRoleConfigs;
+    }
+
+    public ApiRoleConfigList getAllServiceRoleConfigurationInBulk(String serviceName) throws ApiException {
         long offset = 0;
         ApiRoleConfigList allServiceRoleConfigs = new ApiRoleConfigList();
         allServiceRoleConfigs.setItems(new ArrayList<>());
@@ -54,7 +95,7 @@ public class ClouderaManagerServiceRoleCollector implements ServiceRoleCollector
             if (roleConfigList != null && roleConfigList.getItems() != null) {
                 allServiceRoleConfigs.getItems().addAll(roleConfigList.getItems());
             } else {
-                log.receivedNullServiceRoleConfigs(serviceName, clusterName, offset, limit);
+                log.receivedNullServiceRoleConfigs(serviceName, clusterName);
             }
             offset += limit;
         } while (configItemSizeMatchesLimit(roleConfigList, limit));

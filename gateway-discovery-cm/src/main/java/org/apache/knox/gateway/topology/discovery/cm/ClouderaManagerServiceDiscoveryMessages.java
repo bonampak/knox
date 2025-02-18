@@ -102,8 +102,16 @@ public interface ClouderaManagerServiceDiscoveryMessages {
   void fetchingServiceRoleConfigs(String serviceName, String clusterName, long offset, long limit);
 
   @Message(level = MessageLevel.WARN,
-          text = "Received null service role configurations for service {0} for cluster ({1}) at offset {2} and limit {3}")
-  void receivedNullServiceRoleConfigs(String serviceName, String clusterName, long offset, long limit);
+          text = "Received null service role configurations for service {0} for cluster ({1})")
+  void receivedNullServiceRoleConfigs(String serviceName, String clusterName);
+
+  @Message(level = MessageLevel.WARN,
+          text = "Received null service role configurations for service {0} and role {2} for cluster ({1})")
+  void receivedNullServiceRoleConfigs(String serviceName, String clusterName, String roleName);
+
+  @Message(level = MessageLevel.DEBUG,
+          text = "Fetching service role configurations for service {0} and role {2} for cluster ({1})")
+  void fetchingServiceRoleConfigs(String serviceName, String clusterName, String roleName);
 
   @Message(level = MessageLevel.ERROR,
            text = "No address for Cloudera Manager service discovery has been configured.")

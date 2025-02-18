@@ -111,6 +111,10 @@ public interface GatewayConfig {
 
   long DEFAULT_CM_SERVICE_DISCOVERY_CACHE_ENTRY_TTL = 600; // 10 minutes
 
+  String CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_FETCH_STRATEGY_BY_ROLE = "byRole";
+
+  String DEFAULT_CLOUDERA_MANAGER_SERVICE_DISCOVERY_API_VERSION = "v32";
+
   int DEFAULT_CM_SERVICE_DISCOVERY_MAX_RETRY_ATTEMPTS = 3;
 
   String DEFAULT_API_SERVICES_VIEW_VERSION = "v1";
@@ -761,6 +765,29 @@ public interface GatewayConfig {
    *         from CM service discovery (e.g. KNOX_GATEWAY, IDBROKER, DATANODE, HIVEMETASTORE, etc...)
    */
   Collection<String> getClouderaManagerServiceDiscoveryExcludedRoleTypes();
+
+  /**
+   * @return the Cloudera Manager API version to use for service discovery (e.g. v32, v57)
+   */
+  String getClouderaManagerServiceDiscoveryApiVersion();
+
+
+  /**
+   * @return the strategy for fetching role configurations from CM.
+   * We can use
+   * <ul>
+   *     <li>byRole: fetch role configurations after fetching each role for a given service.
+   *      <pre>GET /clusters/{clusterName}/services/{serviceName}/roles</pre> is used, then
+   *      <pre>GET /clusters/{clusterName}/services/{serviceName}/roles/{roleName}/config</pre>
+   *      is invoked for each role.
+   *      </li>
+   *     <li>byService: fetch all the role configurations for a given service.
+   *     <pre>GET /clusters/{clusterName}/services/{serviceName}/roles/configs</pre> is used.
+   *     </li>
+   * </ul>
+   *
+   */
+  String getClouderaManagerServiceDiscoveryRoleFetchStrategy();
 
   /**
    * @return true, if state for tokens issued by the Knox Token service should be managed by Knox.

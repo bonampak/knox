@@ -300,6 +300,8 @@ public class GatewayConfigImpl extends Configuration implements GatewayConfig {
   private static final String CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_PAGE_SIZE = GATEWAY_CONFIG_FILE_PREFIX + ".cloudera.manager.service.discovery.role.pagesize";
   private static final String CLOUDERA_MANAGER_SERVICE_DISCOVERY_EXCLUDED_SERVICE_TYPES = GATEWAY_CONFIG_FILE_PREFIX + ".cloudera.manager.service.discovery.excluded.service.types";
   private static final String CLOUDERA_MANAGER_SERVICE_DISCOVERY_EXCLUDED_ROLE_TYPES = GATEWAY_CONFIG_FILE_PREFIX + ".cloudera.manager.service.discovery.excluded.role.types";
+  private static final String CLOUDERA_MANAGER_SERVICE_DISCOVERY_API_VERSION = GATEWAY_CONFIG_FILE_PREFIX + ".cloudera.manager.service.discovery.api.version";
+  private static final String CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_FETCH_STRATEGY = GATEWAY_CONFIG_FILE_PREFIX + ".cloudera.manager.service.discovery.role.fetch.strategy";
 
   private static final long CLOUDERA_MANAGER_SERVICE_DISCOVERY_CONNECT_TIMEOUT_DEFAULT = 10000;
   private static final long CLOUDERA_MANAGER_SERVICE_DISCOVERY_READ_TIMEOUT_DEFAULT = 10000;
@@ -1317,6 +1319,16 @@ public class GatewayConfigImpl extends Configuration implements GatewayConfig {
   @Override
   public Collection<String> getClouderaManagerServiceDiscoveryExcludedRoleTypes() {
     return getTrimmedStringCollection(CLOUDERA_MANAGER_SERVICE_DISCOVERY_EXCLUDED_ROLE_TYPES);
+  }
+
+  @Override
+  public String getClouderaManagerServiceDiscoveryApiVersion() {
+    return get(CLOUDERA_MANAGER_SERVICE_DISCOVERY_API_VERSION, DEFAULT_CLOUDERA_MANAGER_SERVICE_DISCOVERY_API_VERSION);
+  }
+
+  @Override
+  public String getClouderaManagerServiceDiscoveryRoleFetchStrategy() {
+    return get(CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_FETCH_STRATEGY, CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_FETCH_STRATEGY_BY_ROLE);
   }
 
   @Override

@@ -1224,6 +1224,7 @@ public class ClouderaManagerServiceDiscoveryTest {
     }
     EasyMock.expect(gwConf.getIncludedSSLCiphers()).andReturn(Collections.emptyList()).anyTimes();
     EasyMock.expect(gwConf.getIncludedSSLProtocols()).andReturn(Collections.emptySet()).anyTimes();
+    EasyMock.expect(gwConf.getClouderaManagerServiceDiscoveryApiVersion()).andReturn(GatewayConfig.DEFAULT_CLOUDERA_MANAGER_SERVICE_DISCOVERY_API_VERSION).anyTimes();
     if (excludedServiceType == null) {
       EasyMock.expect(gwConf.getClouderaManagerServiceDiscoveryExcludedServiceTypes()).andReturn(Collections.emptySet()).anyTimes();
     } else {

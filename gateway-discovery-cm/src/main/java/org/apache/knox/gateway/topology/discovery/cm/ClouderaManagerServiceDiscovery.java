@@ -68,13 +68,8 @@ public class ClouderaManagerServiceDiscovery implements ServiceDiscovery, Cluste
 
   private static final GatewaySpiMessages LOGGER = MessagesFactory.get(GatewaySpiMessages.class);
 
-  static final String API_PATH = "api/v57";
-
   private static final String VIEW_SUMMARY     = "summary";
   private static final String VIEW_FULL        = "full";
-
-  static final String DEFAULT_USER_ALIAS = "cm.discovery.user";
-  static final String DEFAULT_PWD_ALIAS  = "cm.discovery.password";
 
   public static final String CM_SERVICE_TYPE  = "CM";
   public static final String CM_ROLE_TYPE  = "CM_SERVER";
@@ -105,6 +100,7 @@ public class ClouderaManagerServiceDiscovery implements ServiceDiscovery, Cluste
   private Collection<String> excludedServiceTypes = Collections.emptySet();
   private Collection<String> excludedRoleTypes = Collections.emptySet();
   private long roleConfigPageSize = 500;
+  private String roleFetchStrategy = "single";
 
   ClouderaManagerServiceDiscovery(GatewayConfig gatewayConfig) {
     this(false, gatewayConfig);
@@ -132,6 +128,7 @@ public class ClouderaManagerServiceDiscovery implements ServiceDiscovery, Cluste
       excludedServiceTypes = getLowercaseStringCollection(gatewayConfig.getClouderaManagerServiceDiscoveryExcludedServiceTypes());
       excludedRoleTypes = getLowercaseStringCollection(gatewayConfig.getClouderaManagerServiceDiscoveryExcludedRoleTypes());
       roleConfigPageSize = gatewayConfig.getClouderaManagerServiceDiscoveryRoleConfigPageSize();
+      roleFetchStrategy = gatewayConfig.getClouderaManagerServiceDiscoveryRoleFetchStrategy();
     }
   }
 
@@ -461,7 +458,7 @@ public class ClouderaManagerServiceDiscovery implements ServiceDiscovery, Cluste
         } else {
           log.lookupRoleConfigsFromCM();
           ServiceRoleCollector roleCollector =
-                  new ClouderaManagerServiceRoleCollector(rolesResourceApi, clusterName, roleConfigPageSize);
+                  new ClouderaManagerServiceRoleCollector(rolesResourceApi, clusterName, roleConfigPageSize, roleFetchStrategy);
           roleConfigs = roleCollector.getAllServiceRoleConfiguration(serviceName);
         }
 

@@ -20,6 +20,7 @@ import com.cloudera.api.swagger.RolesResourceApi;
 import com.cloudera.api.swagger.client.ApiException;
 import com.cloudera.api.swagger.model.ApiRoleConfig;
 import com.cloudera.api.swagger.model.ApiRoleConfigList;
+import com.cloudera.api.swagger.model.ApiRoleList;
 import org.easymock.EasyMock;
 import org.junit.Test;
 
@@ -31,6 +32,8 @@ import java.util.stream.Collectors;
 import static java.math.BigDecimal.ONE;
 import static java.math.BigDecimal.valueOf;
 import static java.math.BigDecimal.ZERO;
+import static org.easymock.EasyMock.anyString;
+import static org.easymock.EasyMock.eq;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
@@ -42,6 +45,8 @@ public class ClouderaManagerServiceRoleCollectorTest {
     private final String clusterName = "Cluster 1";
     private final String serviceName = "service1";
     private final long PAGE_SIZE = 2;
+    private final String BY_ROLE = "byRole";
+    private final String BY_SERVICE = "byService";
 
     private final ApiRoleConfigList page1Full = withRoleTypes("role1", "role2");
     private final ApiRoleConfigList page1Partial = withRoleTypes("role1");
@@ -59,7 +64,7 @@ public class ClouderaManagerServiceRoleCollectorTest {
                 .andReturn(configWithNullItems);
         EasyMock.replay(rolesResourceApi);
 
-        ServiceRoleCollector serviceRoleCollector = new ClouderaManagerServiceRoleCollector(rolesResourceApi, clusterName, PAGE_SIZE);
+        ServiceRoleCollector serviceRoleCollector = new ClouderaManagerServiceRoleCollector(rolesResourceApi, clusterName, PAGE_SIZE, BY_SERVICE);
         ApiRoleConfigList result = serviceRoleCollector.getAllServiceRoleConfiguration(serviceName);
 
         assertEquals("Unexpected role config list size.", 0, result.getItems().size());
@@ -75,12 +80,31 @@ public class ClouderaManagerServiceRoleCollectorTest {
                 .andReturn(emptyConfig);
         EasyMock.replay(rolesResourceApi);
 
-        ServiceRoleCollector serviceRoleCollector = new ClouderaManagerServiceRoleCollector(rolesResourceApi, clusterName, PAGE_SIZE);
+        ServiceRoleCollector serviceRoleCollector = new ClouderaManagerServiceRoleCollector(rolesResourceApi, clusterName, PAGE_SIZE, BY_SERVICE);
         ApiRoleConfigList result = serviceRoleCollector.getAllServiceRoleConfiguration(serviceName);
 
         assertEquals("Unexpected role config list size.", 0, result.getItems().size());
         EasyMock.verify(rolesResourceApi);
     }
+
+    @Test
+    public void testRolesConfigWithEmptyItemsByRole() throws ApiException {
+
+        ApiRoleList emptyRoleList = new ApiRoleList();
+        RolesResourceApi rolesResourceApi = EasyMock.createNiceMock(RolesResourceApi.class);
+        //        ApiRoleList roles = rolesResourceApi.readRoles(clusterName, serviceName, "", VIEW_FULL);
+        EasyMock.expect(
+                        rolesResourceApi.readRoles(eq(clusterName), eq(serviceName), anyString(), eq(DATA_VIEW_FULL)))
+                .andReturn(emptyRoleList);
+        EasyMock.replay(rolesResourceApi);
+
+        ServiceRoleCollector serviceRoleCollector = new ClouderaManagerServiceRoleCollector(rolesResourceApi, clusterName, PAGE_SIZE, BY_ROLE);
+        ApiRoleConfigList result = serviceRoleCollector.getAllServiceRoleConfiguration(serviceName);
+
+        assertEquals("Unexpected role config list size.", 0, result.getItems().size());
+        EasyMock.verify(rolesResourceApi);
+    }
+
 
 
     @Test(expected = ApiException.class)
@@ -90,7 +114,7 @@ public class ClouderaManagerServiceRoleCollectorTest {
                         rolesResourceApi.readRolesConfig(clusterName, serviceName, valueOf(PAGE_SIZE), ZERO, DATA_VIEW_FULL))
                 .andThrow(new ApiException());
         EasyMock.replay(rolesResourceApi);
-        ServiceRoleCollector serviceRoleCollector = new ClouderaManagerServiceRoleCollector(rolesResourceApi, clusterName, PAGE_SIZE);
+        ServiceRoleCollector serviceRoleCollector = new ClouderaManagerServiceRoleCollector(rolesResourceApi, clusterName, PAGE_SIZE, BY_SERVICE);
         try {
             serviceRoleCollector.getAllServiceRoleConfiguration(serviceName);
         } finally {
@@ -108,7 +132,7 @@ public class ClouderaManagerServiceRoleCollectorTest {
                         rolesResourceApi.readRolesConfig(clusterName, serviceName, valueOf(PAGE_SIZE), valueOf(PAGE_SIZE), DATA_VIEW_FULL))
                 .andThrow(new ApiException());
         EasyMock.replay(rolesResourceApi);
-        ServiceRoleCollector serviceRoleCollector = new ClouderaManagerServiceRoleCollector(rolesResourceApi, clusterName, PAGE_SIZE);
+        ServiceRoleCollector serviceRoleCollector = new ClouderaManagerServiceRoleCollector(rolesResourceApi, clusterName, PAGE_SIZE, BY_SERVICE);
         try {
             serviceRoleCollector.getAllServiceRoleConfiguration(serviceName);
         } finally {
@@ -134,7 +158,7 @@ public class ClouderaManagerServiceRoleCollectorTest {
                 .andReturn(page2);
 
         EasyMock.replay(rolesResourceApi);
-        ServiceRoleCollector serviceRoleCollector = new ClouderaManagerServiceRoleCollector(rolesResourceApi, clusterName, pageSize);
+        ServiceRoleCollector serviceRoleCollector = new ClouderaManagerServiceRoleCollector(rolesResourceApi, clusterName, pageSize, BY_SERVICE);
         ApiRoleConfigList result = serviceRoleCollector.getAllServiceRoleConfiguration(serviceName);
 
         assertEquals("Unexpected role config list size.", 2, result.getItems().size());
@@ -151,7 +175,7 @@ public class ClouderaManagerServiceRoleCollectorTest {
                         rolesResourceApi.readRolesConfig(clusterName, serviceName, valueOf(pageSize), ZERO, DATA_VIEW_FULL))
                 .andReturn(page1Partial);
         EasyMock.replay(rolesResourceApi);
-        ServiceRoleCollector serviceRoleCollector = new ClouderaManagerServiceRoleCollector(rolesResourceApi, clusterName, pageSize);
+        ServiceRoleCollector serviceRoleCollector = new ClouderaManagerServiceRoleCollector(rolesResourceApi, clusterName, pageSize, BY_SERVICE);
         ApiRoleConfigList result = serviceRoleCollector.getAllServiceRoleConfiguration(serviceName);
 
         assertEquals("Unexpected role config list size.", 1, result.getItems().size());
@@ -179,7 +203,7 @@ public class ClouderaManagerServiceRoleCollectorTest {
                 .andReturn(emptyConfig);
         EasyMock.replay(rolesResourceApi);
 
-        ServiceRoleCollector serviceRoleCollector = new ClouderaManagerServiceRoleCollector(rolesResourceApi, clusterName, PAGE_SIZE);
+        ServiceRoleCollector serviceRoleCollector = new ClouderaManagerServiceRoleCollector(rolesResourceApi, clusterName, PAGE_SIZE, BY_SERVICE);
         ApiRoleConfigList result = serviceRoleCollector.getAllServiceRoleConfiguration(serviceName);
 
         assertEquals("Unexpected role config list size.", PAGE_SIZE, result.getItems().size());
@@ -198,7 +222,7 @@ public class ClouderaManagerServiceRoleCollectorTest {
         EasyMock.expect(rolesResourceApi.readRolesConfig(clusterName, serviceName, limit, offset2, DATA_VIEW_FULL)).andReturn(page2Full);
         EasyMock.expect(rolesResourceApi.readRolesConfig(clusterName, serviceName, limit, offset3, DATA_VIEW_FULL)).andReturn(emptyConfig);
         EasyMock.replay(rolesResourceApi);
-        ServiceRoleCollector serviceRoleCollector = new ClouderaManagerServiceRoleCollector(rolesResourceApi, clusterName, PAGE_SIZE);
+        ServiceRoleCollector serviceRoleCollector = new ClouderaManagerServiceRoleCollector(rolesResourceApi, clusterName, PAGE_SIZE, BY_SERVICE);
         ApiRoleConfigList result = serviceRoleCollector.getAllServiceRoleConfiguration(serviceName);
 
         assertEquals("Unexpected role config list size.", 4, result.getItems().size());
@@ -224,7 +248,7 @@ public class ClouderaManagerServiceRoleCollectorTest {
                         rolesResourceApi.readRolesConfig(clusterName, serviceName, limit, offset3, DATA_VIEW_FULL))
                 .andReturn(page3Partial);
         EasyMock.replay(rolesResourceApi);
-        ServiceRoleCollector serviceRoleCollector = new ClouderaManagerServiceRoleCollector(rolesResourceApi, clusterName, PAGE_SIZE);
+        ServiceRoleCollector serviceRoleCollector = new ClouderaManagerServiceRoleCollector(rolesResourceApi, clusterName, PAGE_SIZE, BY_SERVICE);
         ApiRoleConfigList result = serviceRoleCollector.getAllServiceRoleConfiguration(serviceName);
 
         assertEquals("Unexpected role config list size.", 5, result.getItems().size());

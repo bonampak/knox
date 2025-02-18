@@ -608,8 +608,9 @@ public class PollingConfigurationAnalyzer implements Runnable {
       Map<ApiRole, ApiConfigList> roleConfigs = new HashMap<>();
       RolesResourceApi rolesResourceApi = new RolesResourceApi(apiClient);
       long roleConfigPageSize = gatewayConfig.getClouderaManagerServiceDiscoveryRoleConfigPageSize();
+      String roleFetchStrategy = gatewayConfig.getClouderaManagerServiceDiscoveryRoleFetchStrategy();
       ServiceRoleCollector roleCollector =
-              new ClouderaManagerServiceRoleCollector(rolesResourceApi, clusterName, roleConfigPageSize);
+              new ClouderaManagerServiceRoleCollector(rolesResourceApi, clusterName, roleConfigPageSize, roleFetchStrategy);
       ApiRoleConfigList roleConfigList = roleCollector.getAllServiceRoleConfiguration(service);
 
       for (ApiRoleConfig roleConfig : roleConfigList.getItems()) {
