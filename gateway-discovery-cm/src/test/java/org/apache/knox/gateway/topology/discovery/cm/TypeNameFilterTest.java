@@ -69,5 +69,4 @@ public class TypeNameFilterTest {
         assertThat("Should exclude exact match", filter.isExcluded("HIVESERVER2"), is(true));
     }
 
-
 }

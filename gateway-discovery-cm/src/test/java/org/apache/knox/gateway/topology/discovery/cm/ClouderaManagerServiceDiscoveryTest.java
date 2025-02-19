@@ -79,11 +79,26 @@ public class ClouderaManagerServiceDiscoveryTest {
 
   private static final String DISCOVERY_URL = "http://localhost:1234";
   private static final String ATLAS_SERVICE_NAME = "ATLAS-1";
+  private static final String READ_ROLES_CONFIG_API_VERSION = "v57";
+  private static final List<String> EXPECTED_API_CALLS_BY_ROLE =
+          Arrays.asList("readServices","readServiceConfig","readRoles", "readRoleConfig" );
+  private static final List<String> EXPECTED_API_CALLS_BY_SERVICE =
+          Arrays.asList("readServices","readServiceConfig","readRolesConfig");
 
   @Test
-  public void testServiceDiscoveryRetry() throws Exception {
+  public void testServiceDiscoveryRetryWithSimpleRoleFetch() throws Exception {
     //re-using an already existing test with 'true' retry flag
-    doTestAtlasDiscovery(true, true);
+    doTestAtlasDiscovery(true, true,
+            GatewayConfig.DEFAULT_CLOUDERA_MANAGER_SERVICE_DISCOVERY_API_VERSION,
+            GatewayConfig.CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_FETCH_STRATEGY_BY_ROLE);
+  }
+
+  @Test
+  public void testServiceDiscoveryRetryWithBulkRoleFetch() throws Exception {
+    //re-using an already existing test with 'true' retry flag
+    doTestAtlasDiscovery(true, true,
+            READ_ROLES_CONFIG_API_VERSION,
+            GatewayConfig.CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_FETCH_STRATEGY_BY_SERVICE);
   }
 
   @Test
@@ -121,13 +136,32 @@ public class ClouderaManagerServiceDiscoveryTest {
   }
 
   @Test
-  public void testAtlasDiscovery() {
-    doTestAtlasDiscovery(false);
+  public void testAtlasDiscoveryWithRoleFetchStrategyByRole() {
+    doTestAtlasDiscovery(false,
+            GatewayConfig.DEFAULT_CLOUDERA_MANAGER_SERVICE_DISCOVERY_API_VERSION,
+            GatewayConfig.CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_FETCH_STRATEGY_BY_ROLE);
   }
 
   @Test
-  public void testAtlasDiscoverySSL() {
-    doTestAtlasDiscovery(true);
+  public void testAtlasDiscoveryWithRoleFetchStrategyByService() {
+    doTestAtlasDiscovery(false,
+            READ_ROLES_CONFIG_API_VERSION,
+            GatewayConfig.CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_FETCH_STRATEGY_BY_SERVICE);
+  }
+
+
+  @Test
+  public void testAtlasDiscoverySSLWithRoleFetchStrategyByRole() {
+    doTestAtlasDiscovery(true,
+            GatewayConfig.DEFAULT_CLOUDERA_MANAGER_SERVICE_DISCOVERY_API_VERSION,
+            GatewayConfig.CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_FETCH_STRATEGY_BY_ROLE);
+  }
+
+  @Test
+  public void testAtlasDiscoverySSLWithRoleFetchStrategyByService() {
+    doTestAtlasDiscovery(true,
+            GatewayConfig.DEFAULT_CLOUDERA_MANAGER_SERVICE_DISCOVERY_API_VERSION,
+            GatewayConfig.CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_FETCH_STRATEGY_BY_ROLE);
   }
 
   @Test
@@ -140,26 +174,28 @@ public class ClouderaManagerServiceDiscoveryTest {
     doTestAtlasAPIDiscovery(true);
   }
 
-  private void doTestAtlasDiscovery(final boolean isSSL) {
-    doTestAtlasDiscovery(isSSL, false);
+  private void doTestAtlasDiscovery(final boolean isSSL, String apiVersion, String roleFetchStrategy) {
+    doTestAtlasDiscovery(isSSL, false, apiVersion, roleFetchStrategy);
   }
 
-  private void doTestAtlasDiscovery(final boolean isSSL, boolean testRetry) {
+  private void doTestAtlasDiscovery(final boolean isSSL, boolean testRetry, String apiVersion, String roleFetchStrategy) {
     final String hostName       = "atlas-host-1";
     final String port           = "21000";
     final String sslPort        = "21003";
-    ServiceDiscovery.Cluster cluster = doTestAtlasDiscovery(hostName, port, sslPort, isSSL, testRetry);
+    ServiceDiscovery.Cluster cluster = doTestAtlasDiscovery(hostName, port, sslPort, isSSL, testRetry, apiVersion, roleFetchStrategy);
     List<String> atlastURLs = cluster.getServiceURLs(AtlasServiceModelGenerator.SERVICE);
     assertEquals(1, atlastURLs.size());
     assertEquals((isSSL ? "https" : "http") + "://" + hostName + ":" + (isSSL ? sslPort : port),
-                 atlastURLs.get(0));
+            atlastURLs.get(0));
   }
 
   private void doTestAtlasAPIDiscovery(final boolean isSSL) {
     final String hostName       = "atlas-host-1";
     final String port           = "21000";
     final String sslPort        = "21003";
-    ServiceDiscovery.Cluster cluster = doTestAtlasDiscovery(hostName, port, sslPort, isSSL);
+    final String apiVersion     = GatewayConfig.DEFAULT_CLOUDERA_MANAGER_SERVICE_DISCOVERY_API_VERSION;
+    final String roleFetchStrategy = GatewayConfig.CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_FETCH_STRATEGY_BY_ROLE;
+    ServiceDiscovery.Cluster cluster = doTestAtlasDiscovery(hostName, port, sslPort, isSSL, apiVersion, roleFetchStrategy);
     List<String> atlastURLs = cluster.getServiceURLs(AtlasAPIServiceModelGenerator.SERVICE);
     assertEquals(1, atlastURLs.size());
     assertEquals((isSSL ? "https" : "http") + "://" + hostName + ":" + (isSSL ? sslPort : port),
@@ -442,7 +478,9 @@ public class ClouderaManagerServiceDiscoveryTest {
                                                        roleProperties,
                                                        false,
                                                        excludeHiveService ? WebHCatServiceModelGenerator.SERVICE_TYPE : null,
-                                                       excludeWebHCatRole ?  WebHCatServiceModelGenerator.ROLE_TYPE : null);
+                                                       excludeWebHCatRole ?  WebHCatServiceModelGenerator.ROLE_TYPE : null,
+                                                       GatewayConfig.DEFAULT_CLOUDERA_MANAGER_SERVICE_DISCOVERY_API_VERSION,
+                                                       GatewayConfig.CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_FETCH_STRATEGY_BY_ROLE);
 
     List<String> urls = cluster.getServiceURLs("WEBHCAT");
     assertNotNull(urls);
@@ -975,17 +1013,21 @@ public class ClouderaManagerServiceDiscoveryTest {
   }
 
   private ServiceDiscovery.Cluster doTestAtlasDiscovery(final String  atlasHost,
-      final String  port,
-      final String  sslPort,
-      final boolean isSSL) {
-    return doTestAtlasDiscovery(atlasHost, port, sslPort, isSSL, false);
+                                                        final String  port,
+                                                        final String  sslPort,
+                                                        final boolean isSSL,
+                                                        final String apiVersion,
+                                                        final String roleFetchStrategy) {
+    return doTestAtlasDiscovery(atlasHost, port, sslPort, isSSL, false, apiVersion, roleFetchStrategy);
   }
 
   private ServiceDiscovery.Cluster doTestAtlasDiscovery(final String  atlasHost,
                                                         final String  port,
                                                         final String  sslPort,
                                                         final boolean isSSL,
-                                                        final boolean testRetry) {
+                                                        final boolean testRetry,
+                                                        String apiVersion,
+                                                        String roleFetchStrategy) {
     // Configure the role
     Map<String, String> roleProperties = new HashMap<>();
     roleProperties.put("atlas_server_http_port", port);
@@ -993,15 +1035,16 @@ public class ClouderaManagerServiceDiscoveryTest {
     roleProperties.put("ssl_enabled", String.valueOf(isSSL));
 
     return doTestDiscovery(atlasHost,
-                           ATLAS_SERVICE_NAME,
-                           AtlasServiceModelGenerator.SERVICE_TYPE,
-                           "ATLAS-ATLAS_SERVER-1",
-                           AtlasServiceModelGenerator.ROLE_TYPE,
-                           Collections.emptyMap(),
-                           roleProperties,
-                           testRetry);
+            ATLAS_SERVICE_NAME,
+            AtlasServiceModelGenerator.SERVICE_TYPE,
+            "ATLAS-ATLAS_SERVER-1",
+            AtlasServiceModelGenerator.ROLE_TYPE,
+            Collections.emptyMap(),
+            roleProperties,
+            testRetry,
+            apiVersion,
+            roleFetchStrategy);
   }
-
 
   private ServiceDiscovery.Cluster doTestHiveServiceDiscovery(final String  hostName,
                                                               final String  thriftPort,
@@ -1187,24 +1230,32 @@ public class ClouderaManagerServiceDiscoveryTest {
 
 
   private ServiceDiscovery.Cluster doTestDiscovery(final String hostName,
-      final String serviceName,
-      final String serviceType,
-      final String roleName,
-      final String roleType,
-      final Map<String, String> serviceProperties,
-      final Map<String, String> roleProperties) {
-    return doTestDiscovery(hostName, serviceName, serviceType, roleName, roleType, serviceProperties, roleProperties, false);
+                                                   final String serviceName,
+                                                   final String serviceType,
+                                                   final String roleName,
+                                                   final String roleType,
+                                                   final Map<String, String> serviceProperties,
+                                                   final Map<String, String> roleProperties) {
+    String apiVersion = GatewayConfig.DEFAULT_CLOUDERA_MANAGER_SERVICE_DISCOVERY_API_VERSION;
+    String roleFetchStrategy = GatewayConfig.CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_FETCH_STRATEGY_BY_ROLE;
+
+    return doTestDiscovery(hostName, serviceName, serviceType, roleName, roleType, serviceProperties, roleProperties,
+            false, apiVersion, roleFetchStrategy);
   }
 
   private ServiceDiscovery.Cluster doTestDiscovery(final String hostName,
-      final String serviceName,
-      final String serviceType,
-      final String roleName,
-      final String roleType,
-      final Map<String, String> serviceProperties,
-      final Map<String, String> roleProperties,
-      boolean testRetry) {
-    return doTestDiscovery(hostName, serviceName, serviceType, roleName, roleType, serviceProperties, roleProperties, testRetry, null, null);
+                                                   final String serviceName,
+                                                   final String serviceType,
+                                                   final String roleName,
+                                                   final String roleType,
+                                                   final Map<String, String> serviceProperties,
+                                                   final Map<String, String> roleProperties,
+                                                   boolean testRetry,
+                                                   String apiVersion,
+                                                   String roleFetchStrategy) {
+    return doTestDiscovery(hostName, serviceName, serviceType, roleName, roleType,
+            serviceProperties, roleProperties, testRetry, null, null,
+            apiVersion, roleFetchStrategy);
   }
 
   private ServiceDiscovery.Cluster doTestDiscovery(final String hostName,
@@ -1216,7 +1267,9 @@ public class ClouderaManagerServiceDiscoveryTest {
                                                    final Map<String, String> roleProperties,
                                                    boolean testRetry,
                                                    String excludedServiceType,
-                                                   String excludedRoleType) {
+                                                   String excludedRoleType,
+                                                   String apiVersion,
+                                                   String roleFetchStrategy) {
     final String clusterName = "cluster-1";
 
     GatewayConfig gwConf = EasyMock.createNiceMock(GatewayConfig.class);
@@ -1226,8 +1279,9 @@ public class ClouderaManagerServiceDiscoveryTest {
     }
     EasyMock.expect(gwConf.getIncludedSSLCiphers()).andReturn(Collections.emptyList()).anyTimes();
     EasyMock.expect(gwConf.getIncludedSSLProtocols()).andReturn(Collections.emptySet()).anyTimes();
-    EasyMock.expect(gwConf.getClouderaManagerServiceDiscoveryApiVersion()).andReturn(GatewayConfig.DEFAULT_CLOUDERA_MANAGER_SERVICE_DISCOVERY_API_VERSION).anyTimes();
-    EasyMock.expect(gwConf.getClouderaManagerServiceDiscoveryRoleFetchStrategy()).andReturn(GatewayConfig.CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_FETCH_STRATEGY_BY_ROLE).anyTimes();
+    EasyMock.expect(gwConf.getClouderaManagerServiceDiscoveryApiVersion()).andReturn(apiVersion).anyTimes();
+    EasyMock.expect(gwConf.getClouderaManagerServiceDiscoveryRoleFetchStrategy()).andReturn(roleFetchStrategy).anyTimes();
+
     if (excludedServiceType == null) {
       EasyMock.expect(gwConf.getClouderaManagerServiceDiscoveryExcludedServiceTypes()).andReturn(Collections.emptySet()).anyTimes();
     } else {
@@ -1282,11 +1336,22 @@ public class ClouderaManagerServiceDiscoveryTest {
     assertNotNull(cluster);
     assertEquals(clusterName, cluster.getName());
     if (serviceName.equals(ATLAS_SERVICE_NAME)) {
-      assertEquals(testRetry ? 9 : 4, mockClient.getExecuteCount());
+      assertEquals(getExpectedExecuteCount(roleFetchStrategy, testRetry), mockClient.getExecuteCount());
     }
     return cluster;
   }
 
+  private int getExpectedExecuteCount(String roleFetchStrategy, boolean testRetry) {
+    // With testRetry, retryAttempts is configured to be 1,
+    // the first call for readServices() fails in TestFaultyDiscoveryApiClient
+    // with a retryable ApiException.
+    // Then discovery is retried and calls succeed.
+    if (GatewayConfig.CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_FETCH_STRATEGY_BY_ROLE.equals(roleFetchStrategy)) {
+      return testRetry ? EXPECTED_API_CALLS_BY_ROLE.size() + 1 : EXPECTED_API_CALLS_BY_ROLE.size();
+    } else {
+      return testRetry ? EXPECTED_API_CALLS_BY_SERVICE.size() + 1 : EXPECTED_API_CALLS_BY_SERVICE.size();
+    }
+  }
 
   private static ServiceDiscoveryConfig createMockDiscoveryConfig(String clusterName) {
     return createMockDiscoveryConfig(DISCOVERY_URL, "itsme", clusterName);
@@ -1422,9 +1487,11 @@ public class ClouderaManagerServiceDiscoveryTest {
 
     @Override
     public <T> ApiResponse<T> execute(Call call, Type returnType) throws ApiException {
-      if (executeCount.getAndIncrement() < GatewayConfig.DEFAULT_CM_SERVICE_DISCOVERY_MAX_RETRY_ATTEMPTS - 2) {
+      if (executeCount.get() == 0) {
+        executeCount.incrementAndGet();
         throw new ApiException(new SocketTimeoutException("Failed to connect to CM HOST"));
       }
+      //executeCount will be incremented in parent class
       return super.execute(call, returnType);
     }
   }
