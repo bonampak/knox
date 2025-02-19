@@ -264,12 +264,12 @@ public class ClouderaManagerServiceDiscovery implements ServiceDiscovery, Cluste
     ServicesResourceApi servicesResourceApi = new ServicesResourceApi(client);
     RolesResourceApi rolesResourceApi = new RolesResourceApi(client);
     ServiceRoleCollector roleCollector =
-            new ServiceRoleCollectorBuilder(gatewayConfig)
+            ServiceRoleCollectorBuilder.newBuilder()
+                    .gatewayConfig(gatewayConfig)
                     .rolesResourceApi(rolesResourceApi)
                     .build();
 
     log.discoveringCluster(clusterName);
-
 
     List<ApiService> serviceList = getServiceList(client.getConfig(), servicesResourceApi);
     if (serviceList == null) {

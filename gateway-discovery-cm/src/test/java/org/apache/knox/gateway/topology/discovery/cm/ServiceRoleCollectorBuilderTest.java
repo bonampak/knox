@@ -29,17 +29,12 @@ public class ServiceRoleCollectorBuilderTest {
 
     private static final String API_CLIENT_BASE_PATH = "/api/v57";
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testDefaultRoleCollectorConfig() {
-        ServiceRoleCollectorBuilder builder = new ServiceRoleCollectorBuilder(null);
-        builder.build();
-    }
-
     @Test
     public void testBuilderWithByRoleConfig() {
         RolesResourceApi api = rolesResourceApi();
         GatewayConfig config = gatewayConfigWithByRoleFetchType();
-        ServiceRoleCollector serviceRoleCollector = new ServiceRoleCollectorBuilder(config).rolesResourceApi(api).build();
+        ServiceRoleCollector serviceRoleCollector = ServiceRoleCollectorBuilder.newBuilder()
+                .gatewayConfig(config).rolesResourceApi(api).build();
 
         assertThat("collector type should be by role", serviceRoleCollector, isA(ServiceRoleCollectorByRole.class));
         EasyMock.verify(api);
@@ -50,33 +45,42 @@ public class ServiceRoleCollectorBuilderTest {
     public void testBuilderWithByServiceConfig() {
         RolesResourceApi api = rolesResourceApi();
         GatewayConfig config = gatewayConfigWithByServiceFetchType();
-        ServiceRoleCollector serviceRoleCollector = new ServiceRoleCollectorBuilder(config).rolesResourceApi(api).build();
+        ServiceRoleCollector serviceRoleCollector = ServiceRoleCollectorBuilder.newBuilder()
+                .gatewayConfig(config).rolesResourceApi(api).build();
 
         assertThat("collector type should be by service", serviceRoleCollector, isA(ServiceRoleCollectorByService.class));
         EasyMock.verify(api);
         EasyMock.verify(config);
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void testBuilderWithNullGatewayConfig() {
         RolesResourceApi api = rolesResourceApi();
-        ServiceRoleCollector serviceRoleCollector = new ServiceRoleCollectorBuilder(null).rolesResourceApi(api).build();
+        ServiceRoleCollector serviceRoleCollector = ServiceRoleCollectorBuilder.newBuilder()
+                .gatewayConfig(null).rolesResourceApi(api).build();
 
         assertThat("collector type should be by role", serviceRoleCollector, isA(ServiceRoleCollectorByRole.class));
         EasyMock.verify(api);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBuilderWithNullRolesResourceApi() {
+        ServiceRoleCollectorBuilder.newBuilder()
+                .gatewayConfig(gatewayConfigWithByRoleFetchType())
+                .rolesResourceApi(null)
+                .build();
     }
 
     @Test
     public void testBuilderWithInvalidFetchTypeConfig() {
         RolesResourceApi api = rolesResourceApi();
         GatewayConfig config = gatewayConfigWithInvalidServiceFetchType();
-        ServiceRoleCollector serviceRoleCollector = new ServiceRoleCollectorBuilder(config).rolesResourceApi(api).build();
+        ServiceRoleCollector serviceRoleCollector = ServiceRoleCollectorBuilder.newBuilder()
+                .gatewayConfig(config).rolesResourceApi(api).build();
 
         assertThat("collector type should be by role", serviceRoleCollector, isA(ServiceRoleCollectorByRole.class));
         EasyMock.verify(api);
     }
-
-
 
     private RolesResourceApi rolesResourceApi() {
         ApiClient apiClient = EasyMock.createNiceMock(ApiClient.class);

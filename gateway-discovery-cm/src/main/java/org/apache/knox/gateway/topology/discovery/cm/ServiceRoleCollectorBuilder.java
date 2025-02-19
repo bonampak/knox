@@ -22,49 +22,77 @@ import org.apache.knox.gateway.config.GatewayConfig;
 import org.apache.knox.gateway.i18n.messages.MessagesFactory;
 
 import java.util.Collection;
-import java.util.Collections;
 
 import static org.apache.knox.gateway.config.GatewayConfig.CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_FETCH_STRATEGY_BY_ROLE;
 import static org.apache.knox.gateway.config.GatewayConfig.CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_FETCH_STRATEGY_BY_SERVICE;
 
 public class ServiceRoleCollectorBuilder {
 
-    private Collection<String> excludedRoleTypes = Collections.emptySet();
-    private String fetchStrategy = CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_FETCH_STRATEGY_BY_ROLE;
-    private long pageSize = 500;
-    private RolesResourceApi rolesResourceApi;
-    private static final ClouderaManagerServiceDiscoveryMessages log =
-            MessagesFactory.get(ClouderaManagerServiceDiscoveryMessages.class);
-
-    public ServiceRoleCollectorBuilder(GatewayConfig config) {
-        if (config != null) {
-            fetchStrategy = config.getClouderaManagerServiceDiscoveryRoleFetchStrategy();
-            pageSize = config.getClouderaManagerServiceDiscoveryRoleConfigPageSize();
-            excludedRoleTypes = config.getClouderaManagerServiceDiscoveryExcludedRoleTypes();
-        }
+    private ServiceRoleCollectorBuilder() {
     }
 
-    public ServiceRoleCollectorBuilder rolesResourceApi(RolesResourceApi rolesResourceApi) {
-        this.rolesResourceApi = rolesResourceApi;
-        return this;
+    public interface GatewayConfigStep {
+        RolesResourceApiStep gatewayConfig(GatewayConfig config);
     }
 
-    public ServiceRoleCollector build() {
-        if (rolesResourceApi == null) {
-            throw new IllegalArgumentException("roles resource API must be set");
+    public interface RolesResourceApiStep {
+        BuildStep rolesResourceApi(RolesResourceApi rolesResourceApi);
+    }
+
+    public interface BuildStep {
+        ServiceRoleCollector build();
+    }
+
+    public static GatewayConfigStep newBuilder() {
+        return new Steps();
+    }
+
+    private static class Steps implements GatewayConfigStep, RolesResourceApiStep, BuildStep {
+
+        private GatewayConfig gatewayConfig;
+        private RolesResourceApi rolesResourceApi;
+        private static final ClouderaManagerServiceDiscoveryMessages log =
+                MessagesFactory.get(ClouderaManagerServiceDiscoveryMessages.class);
+
+        @Override
+        public RolesResourceApiStep gatewayConfig(GatewayConfig gatewayConfig) {
+            this.gatewayConfig = gatewayConfig;
+            return this;
         }
-        TypeNameFilter roleTypeNameFilter = new TypeNameFilter(excludedRoleTypes);
-        String clientBasePath = rolesResourceApi.getApiClient().getBasePath();
-        if (CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_FETCH_STRATEGY_BY_ROLE.equals(fetchStrategy)) {
-            log.usingSimpleRoleStrategy(fetchStrategy, clientBasePath);
-            return new ServiceRoleCollectorByRole(rolesResourceApi, roleTypeNameFilter);
-        } else if (CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_FETCH_STRATEGY_BY_SERVICE.equals(fetchStrategy)) {
-            log.usingRoleStrategyWithPageSize(fetchStrategy, pageSize, clientBasePath);
-            return new ServiceRoleCollectorByService(rolesResourceApi, pageSize, roleTypeNameFilter);
-        } else {
-            log.usingSimpleRoleStrategyFallback(fetchStrategy, clientBasePath);
-            return new ServiceRoleCollectorByRole(rolesResourceApi, roleTypeNameFilter);
+
+        @Override
+        public BuildStep rolesResourceApi(RolesResourceApi rolesResourceApi) {
+            this.rolesResourceApi = rolesResourceApi;
+            return this;
         }
+
+        @Override
+        public ServiceRoleCollector build() {
+            if (gatewayConfig == null) {
+                throw new IllegalArgumentException("gateway config must be set");
+            }
+            if (rolesResourceApi == null) {
+                throw new IllegalArgumentException("roles resource API must be set");
+            }
+
+            String fetchStrategy = gatewayConfig.getClouderaManagerServiceDiscoveryRoleFetchStrategy();
+            long pageSize = gatewayConfig.getClouderaManagerServiceDiscoveryRoleConfigPageSize();
+            Collection<String> excludedRoleTypes = gatewayConfig.getClouderaManagerServiceDiscoveryExcludedRoleTypes();
+            TypeNameFilter roleTypeNameFilter = new TypeNameFilter(excludedRoleTypes);
+            String clientBasePath = rolesResourceApi.getApiClient().getBasePath();
+
+            if (CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_FETCH_STRATEGY_BY_ROLE.equals(fetchStrategy)) {
+                log.usingSimpleRoleStrategy(fetchStrategy, clientBasePath);
+                return new ServiceRoleCollectorByRole(rolesResourceApi, roleTypeNameFilter);
+            } else if (CLOUDERA_MANAGER_SERVICE_DISCOVERY_ROLE_FETCH_STRATEGY_BY_SERVICE.equals(fetchStrategy)) {
+                log.usingRoleStrategyWithPageSize(fetchStrategy, pageSize, clientBasePath);
+                return new ServiceRoleCollectorByService(rolesResourceApi, pageSize, roleTypeNameFilter);
+            } else {
+                log.usingSimpleRoleStrategyFallback(fetchStrategy, clientBasePath);
+                return new ServiceRoleCollectorByRole(rolesResourceApi, roleTypeNameFilter);
+            }
+        }
+
     }
 
 }

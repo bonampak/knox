@@ -607,12 +607,12 @@ public class PollingConfigurationAnalyzer implements Runnable {
 
       Map<ApiRole, ApiConfigList> roleConfigs = new HashMap<>();
       RolesResourceApi rolesResourceApi = new RolesResourceApi(apiClient);
-      ServiceRoleCollector roleCollector = new ServiceRoleCollectorBuilder(gatewayConfig)
+      ServiceRoleCollector roleCollector = ServiceRoleCollectorBuilder.newBuilder()
+              .gatewayConfig(gatewayConfig)
               .rolesResourceApi(rolesResourceApi)
               .build();
 
       ApiRoleConfigList roleConfigList = roleCollector.getAllServiceRoleConfigurations(clusterName, service);
-
       for (ApiRoleConfig roleConfig : roleConfigList.getItems()) {
         ApiConfigList configList = roleConfig.getConfig();
         String roleName = roleConfig.getName();
