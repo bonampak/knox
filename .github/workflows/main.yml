@@ -35,6 +35,8 @@ jobs:
     name: CI - Java ${{ matrix.java }}
     steps:
       - uses: actions/checkout@v4
+      - name: 'Check Docker'
+        run: docker info
       - name: 'Setup Java'
         uses: actions/setup-java@v4
         with:
