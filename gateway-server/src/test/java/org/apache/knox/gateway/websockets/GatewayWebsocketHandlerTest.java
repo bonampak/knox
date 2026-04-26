@@ -32,6 +32,7 @@ import org.easymock.EasyMock;
 import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.http.HttpURI;
 import org.eclipse.jetty.util.Callback;
+import org.eclipse.jetty.websocket.api.util.WSURI;
 import org.eclipse.jetty.websocket.server.ServerUpgradeRequest;
 import org.eclipse.jetty.websocket.server.ServerUpgradeResponse;
 import org.junit.Assert;
@@ -45,6 +46,7 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.net.URI;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -85,6 +87,7 @@ public class GatewayWebsocketHandlerTest {
 
         JWTValidator jwtValidator = EasyMock.createNiceMock(JWTValidator.class);
         EasyMock.expect(jwtValidator.validate()).andReturn(true).anyTimes();
+        EasyMock.expect(jwtValidator.getUsername()).andReturn("testUser").anyTimes();
         PowerMock.mockStatic(JWTValidatorFactory.class);
         EasyMock.expect(JWTValidatorFactory.create(req, gatewayServices, gatewayConfig)).andReturn(jwtValidator).anyTimes();
 
@@ -112,6 +115,7 @@ public class GatewayWebsocketHandlerTest {
       EasyMock.replay(callback);
       JWTValidator jwtValidator = EasyMock.createNiceMock(JWTValidator.class);
       EasyMock.expect(jwtValidator.validate()).andReturn(true).anyTimes();
+      EasyMock.expect(jwtValidator.getUsername()).andReturn("testUser").anyTimes();
       PowerMock.mockStatic(JWTValidatorFactory.class);
       EasyMock.expect(JWTValidatorFactory.create(req, gatewayServices, gatewayConfig)).andReturn(jwtValidator).anyTimes();
 
@@ -171,11 +175,14 @@ public class GatewayWebsocketHandlerTest {
         EasyMock.replay(gatewayServices,gatewayConfig);
         KnoxWebSocketCreator knoxWebSocketCreator = new KnoxWebSocketCreator(gatewayConfig,gatewayServices);
         knoxWebSocketCreator.createWebSocket(req,resp,callback);
+
     }
 
     private ServerUpgradeRequest createServerUpgradeRequest(String url) throws Exception {
         ServerUpgradeRequest mockRequest = EasyMock.createNiceMock(ServerUpgradeRequest.class);
-        HttpURI httpURI = HttpURI.build(url);
+        URI httpUri = WSURI.toHttp(new URI(url));
+
+        HttpURI httpURI = HttpURI.build(httpUri);
 
         // Set the expectations needed by KnoxWebSocketCreator and JWTValidator
         EasyMock.expect(mockRequest.getHttpURI()).andReturn(httpURI).anyTimes();
