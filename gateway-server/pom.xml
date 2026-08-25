@@ -74,6 +74,10 @@
             <groupId>jakarta.json</groupId>
             <artifactId>jakarta.json-api</artifactId>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>javax.websocket</groupId>-->
+<!--            <artifactId>javax.websocket-client-api</artifactId>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.eclipse.parsson</groupId>
             <artifactId>parsson</artifactId>
@@ -163,16 +167,20 @@
             <artifactId>jetty-server</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-servlet</artifactId>
+            <groupId>org.eclipse.jetty.ee8</groupId>
+            <artifactId>jetty-ee8-nested</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty.ee8</groupId>
+            <artifactId>jetty-ee8-servlet</artifactId>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-util</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-webapp</artifactId>
+            <groupId>org.eclipse.jetty.ee8</groupId>
+            <artifactId>jetty-ee8-webapp</artifactId>
         </dependency>
         
         <dependency>
@@ -307,7 +315,7 @@
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
-            <artifactId>metrics-jetty9</artifactId>
+            <artifactId>metrics-jetty12</artifactId>
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
@@ -323,20 +331,20 @@
         </dependency>
 
         <!--
-        These dependencies (jetty-annotations, apache-jsp, apache-jstl) are required for JSP support.
+        These dependencies (jetty-ee8-annotations, jetty-ee8-apache-jsp, jetty-ee8-glassfish-jstl) are required for JSP support.
         The need to be late in the classpath for some reason otherwise class loading issues occur.
         -->
         <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-annotations</artifactId>
+            <groupId>org.eclipse.jetty.ee8</groupId>
+            <artifactId>jetty-ee8-annotations</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>apache-jsp</artifactId>
+            <groupId>org.eclipse.jetty.ee8</groupId>
+            <artifactId>jetty-ee8-apache-jsp</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>apache-jstl</artifactId>
+            <groupId>org.eclipse.jetty.ee8</groupId>
+            <artifactId>jetty-ee8-glassfish-jstl</artifactId>
         </dependency>
 
         <dependency>
@@ -351,16 +359,21 @@
         <!-- Websocket support -->
         <dependency>
             <groupId>org.eclipse.jetty.websocket</groupId>
-            <artifactId>websocket-api</artifactId>
+            <artifactId>jetty-websocket-jetty-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty.websocket</groupId>
-            <artifactId>websocket-server</artifactId>
+            <artifactId>jetty-websocket-jetty-server</artifactId>
         </dependency>
 
         <dependency>
-           <groupId>org.eclipse.jetty.websocket</groupId>
-           <artifactId>websocket-servlet</artifactId>
+            <groupId>org.eclipse.jetty.ee8.websocket</groupId>
+            <artifactId>jetty-ee8-websocket-jetty-server</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.eclipse.jetty.ee8.websocket</groupId>
+            <artifactId>jetty-ee8-websocket-servlet</artifactId>
         </dependency>
 
         <dependency>
@@ -369,23 +382,18 @@
         </dependency>
 
         <dependency>
-           <groupId>org.eclipse.jetty.websocket</groupId>
-           <artifactId>javax-websocket-server-impl</artifactId>
+            <groupId>org.eclipse.jetty.ee8.websocket</groupId>
+            <artifactId>jetty-ee8-websocket-javax-server</artifactId>
         </dependency>
 
         <dependency>
-           <groupId>org.eclipse.jetty.websocket</groupId>
-           <artifactId>javax-websocket-client-impl</artifactId>
+            <groupId>org.eclipse.jetty.ee8.websocket</groupId>
+            <artifactId>jetty-ee8-websocket-javax-client</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-client</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.eclipse.jetty.websocket</groupId>
-            <artifactId>websocket-client</artifactId>
         </dependency>
 
         <dependency>
@@ -601,6 +609,12 @@
         <dependency>
             <groupId>org.apache.velocity</groupId>
             <artifactId>velocity-engine-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.eclipse.jetty.websocket</groupId>
+            <artifactId>jetty-websocket-core-common</artifactId>
             <scope>test</scope>
         </dependency>
 

@@ -18,20 +18,21 @@
 package org.apache.knox.gateway.mock;
 
 import org.apache.knox.test.mock.MockServlet;
-import org.eclipse.jetty.server.Handler;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.ee8.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee8.servlet.ServletHolder;
+
+import java.io.IOException;
 
 public class MockConsoleFactory {
 
-  public static Handler create() {
+  public static ServletContextHandler create() throws IOException {
     ServletHolder consoleHolder = new ServletHolder( "console", MockServlet.class );
     consoleHolder.setInitParameter( "contentType", "text/html" );
     consoleHolder.setInitParameter( "content", "<html>Console UI goes here.</html>" );
 
     ServletContextHandler consoleContext = new ServletContextHandler( ServletContextHandler.SESSIONS );
     consoleContext.setContextPath( "/console" );
-    consoleContext.setResourceBase( "target/classes" );
+    consoleContext.setBaseResource(consoleContext.newResource( "target/classes" ));
     consoleContext.addServlet( consoleHolder, "/*" );
 
     return consoleContext;

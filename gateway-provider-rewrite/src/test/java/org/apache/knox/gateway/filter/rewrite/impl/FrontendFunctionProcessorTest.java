@@ -29,18 +29,16 @@ import org.apache.knox.gateway.services.GatewayServices;
 import org.apache.knox.gateway.services.registry.ServiceRegistry;
 import org.apache.knox.gateway.util.urltemplate.Parser;
 import org.apache.knox.test.TestUtils;
-import org.apache.knox.test.log.NoOpLogger;
 import org.apache.knox.test.mock.MockInteraction;
 import org.apache.knox.test.mock.MockServlet;
 import org.apache.http.auth.BasicUserPrincipal;
 import org.easymock.EasyMock;
+import org.eclipse.jetty.ee8.servlet.FilterHolder;
+import org.eclipse.jetty.ee8.servlet.ServletHolder;
+import org.eclipse.jetty.ee8.servlet.ServletTester;
 import org.eclipse.jetty.http.HttpTester;
-import org.eclipse.jetty.servlet.FilterHolder;
-import org.eclipse.jetty.servlet.ServletHolder;
-import org.eclipse.jetty.servlet.ServletTester;
 import org.eclipse.jetty.util.Attributes;
 import org.eclipse.jetty.util.AttributesMap;
-import org.eclipse.jetty.util.log.Log;
 import org.hamcrest.core.Is;
 import org.junit.Test;
 
@@ -136,16 +134,14 @@ public class FrontendFunctionProcessorTest {
 
     String descriptorUrl = TestUtils.getResourceUrl( FrontendFunctionProcessorTest.class, "rewrite.xml" ).toExternalForm();
 
-    Log.setLog( new NoOpLogger() );
-
     server = new ServletTester();
     server.setContextPath( "/" );
     server.getContext().addEventListener( new UrlRewriteServletContextListener() );
     server.getContext().setInitParameter(
         UrlRewriteServletContextListener.DESCRIPTOR_LOCATION_INIT_PARAM_NAME, descriptorUrl );
 
-    if( attributes != null ) {
-      server.getContext().setAttributes( attributes );
+    if (attributes != null ) {
+      attributes.asAttributeMap().forEach((key, value) -> server.getContext().setAttribute(key, value));
     }
     server.getContext().setAttribute( GatewayServices.GATEWAY_CLUSTER_ATTRIBUTE, "test-cluster" );
     server.getContext().setAttribute( GatewayServices.GATEWAY_SERVICES_ATTRIBUTE, mockGatewayServices );

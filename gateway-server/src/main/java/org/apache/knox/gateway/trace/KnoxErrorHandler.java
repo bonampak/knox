@@ -17,28 +17,8 @@
  */
 package org.apache.knox.gateway.trace;
 
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.ErrorHandler;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.Set;
+import org.eclipse.jetty.ee8.nested.ErrorHandler;
 
 public class KnoxErrorHandler extends ErrorHandler {
-
-  private Set<Integer> bodyFilter;
-
-  public void setTracedBodyFilter( String s ) {
-    bodyFilter = TraceUtil.parseIntegerSet( s );
-  }
-
-  @Override
-  public void handle( String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response )
-      throws IOException, ServletException {
-    HttpServletResponse traceResponse = new TraceResponse( response, bodyFilter );
-    super.handle( target, baseRequest, request, traceResponse );
-  }
 
 }
